@@ -119,7 +119,7 @@ class MyDatabase extends _$MyDatabase {
   ) async {
     final tableName = dataset.uuid.snakeCase;
     final columnName = 'col_${column.title.snakeCase}';
-    final pattern = '%$searchValue%';
+    final pattern = "'%$searchValue%'";
 
     final statement = '''
       SELECT $columnName
