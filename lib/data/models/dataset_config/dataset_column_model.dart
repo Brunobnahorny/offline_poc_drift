@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-const _column1 = 'facdd1a1-120e-4e6f-8db8-d8566f613c25';
+const pkColumn = 'facdd1a1-120e-4e6f-8db8-d8566f613c25';
 const _column2 = '4c3a6d81-24ba-4d78-b0dc-4deba04c33e0';
 const _column3 = '81f11cc3-4694-425e-b047-3a66c9b742cf';
 const _column4 = '6f7f18ff-6057-4dac-8aa7-9a6662479bb9';
@@ -9,7 +9,7 @@ const _column6 = 'afb6ed8d-c8e1-4bf0-bf7d-69e35ef179fd';
 
 const List<DatasetColumn> kExampleColumns = [
   DatasetColumn(
-    uuid: _column1,
+    uuid: pkColumn,
     title: '1-texto',
     type: ColumnType.text,
   ),

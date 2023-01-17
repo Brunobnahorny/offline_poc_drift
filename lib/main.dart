@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:offline_poc_drift/presentation/screens/home/home_screen.dart';
 
-void main() {
+import 'data/local/db/database.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  dbSingleton = MyDatabase();
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const MyApp());
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:offline_poc_drift/data/local/db/database.dart';
 import 'package:offline_poc_drift/data/models/dataset_config/dataset_model.dart';
 import 'package:offline_poc_drift/data/models/record/record_model.dart';
 
@@ -70,6 +71,49 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Ações',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.data_object),
+              title: const Text('Gerar tabela do dataset'),
+              onTap: () =>
+                  dbSingleton.generateDatasetTable(kExampleDatasetConfig),
+            ),
+            ListTile(
+              leading: const Icon(Icons.insert_chart),
+              title: const Text('Popular 1.000 registros'),
+              onTap: () =>
+                  dbSingleton.insertRandomRecords(1000),
+            ),
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('Popular 10.000 registros'),
+              onTap: () =>
+                  dbSingleton.insertRandomRecords(10000),
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_circle),
+              title: const Text('Popular 100.000 registros'),
+              onTap: () =>
+                  dbSingleton.insertRandomRecords(100000),
+            ),
+          ],
         ),
       ),
     );

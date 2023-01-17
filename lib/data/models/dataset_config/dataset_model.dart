@@ -6,6 +6,7 @@ const _kDatasetUuid = 'c5b61220-0122-479c-bf0f-f1c511cd22bf';
 
 const kExampleDatasetConfig = Dataset(
   uuid: _kDatasetUuid,
+  uuidPkColumn: pkColumn,
   title: 'Dataset de exemplo',
   columns: kExampleColumns,
 );
@@ -13,10 +14,12 @@ const kExampleDatasetConfig = Dataset(
 class Dataset {
   final String uuid;
   final String title;
+  final String uuidPkColumn;
   final List<DatasetColumn> columns;
 
   const Dataset({
     required this.uuid,
+    required this.uuidPkColumn,
     required this.title,
     required this.columns,
   });
@@ -24,6 +27,7 @@ class Dataset {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'uuid': uuid,
+      'pk_column': pkColumn,
       'title': title,
       'columns': columns.map((x) => x.toMap()).toList(),
     };
@@ -32,6 +36,7 @@ class Dataset {
   factory Dataset.fromMap(Map<String, dynamic> map) {
     return Dataset(
       uuid: map['uuid'] as String,
+      uuidPkColumn: map['pk_column'] as String,
       title: map['title'] as String,
       columns: List<DatasetColumn>.from(
         (map['columns'] as List<int>).map<DatasetColumn>(
