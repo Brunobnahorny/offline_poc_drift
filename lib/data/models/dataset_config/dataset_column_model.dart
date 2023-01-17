@@ -10,8 +10,8 @@ const _column6 = 'afb6ed8d-c8e1-4bf0-bf7d-69e35ef179fd';
 const List<DatasetColumn> kExampleColumns = [
   DatasetColumn(
     uuid: pkColumn,
-    title: '1-texto',
-    type: ColumnType.text,
+    title: '1-pk',
+    type: ColumnType.number,
   ),
   DatasetColumn(
     uuid: _column2,

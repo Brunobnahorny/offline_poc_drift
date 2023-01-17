@@ -33,7 +33,12 @@ class MyDatabase extends _$MyDatabase {
   ) async {
     final List<String> columnStatements = dataset.columns.map(
       (e) {
-        return 'col_${e.title.snakeCase} ${_parseSqlDataType(e.type)}${e.uuid == dataset.uuidPkColumn ? " PRIMARY KEY" : ""}';
+        final pk = e.uuid == dataset.uuidPkColumn;
+        if (pk) {
+          return 'col_${e.title.snakeCase} INTEGER PRIMARY KEY AUTOINCREMENT';
+        } else {
+          return 'col_${e.title.snakeCase} ${_parseSqlDataType(e.type)}';
+        }
       },
     ).toList();
 
@@ -68,15 +73,18 @@ class MyDatabase extends _$MyDatabase {
     List<Record> records,
   ) async {
     final tableName = dataset.uuid.snakeCase;
-    final columnsNameList =
-        dataset.columns.map((e) => 'col_${e.title.snakeCase}').join(',');
+    final columnsNameList = dataset.columns
+        .where((col) => col.uuid != dataset.uuidPkColumn)
+        .map((e) => 'col_${e.title.snakeCase}')
+        .join(',');
     final mapDatasetColumnType = Map<String, ColumnType>.fromEntries(
         dataset.columns.map((e) => MapEntry(e.uuid, e.type)));
 
     final Iterable<String> insertStatementsLines = records.map(
       (record) {
         final uuidColumns = dataset.columns.map((e) => e.uuid);
-        final recordValue = uuidColumns.map((e) {
+        final recordValue =
+            uuidColumns.where((e) => e != dataset.uuidPkColumn).map((e) {
           final columnType = mapDatasetColumnType[e]!;
           final columnValue = record.mapColumnValues[e];
           return _parseColumnValueInsert(columnType, columnValue);
