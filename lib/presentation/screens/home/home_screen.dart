@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:offline_poc_drift/data/local/db/database.dart';
 import 'package:offline_poc_drift/data/models/dataset_config/dataset_model.dart';
@@ -22,7 +24,7 @@ class _HomePageState extends State<HomePage> {
         ),
       )
       .toList();
-  final List<Record> recordsList = [];
+  List<Record> recordsList = [];
   DatasetColumn selectedColumn = kExampleDatasetConfig.columns.first;
 
   @override
@@ -98,20 +100,17 @@ class _HomePageState extends State<HomePage> {
             ListTile(
               leading: const Icon(Icons.insert_chart),
               title: const Text('Popular 1.000 registros'),
-              onTap: () =>
-                  dbSingleton.insertRandomRecords(1000),
+              onTap: () => dbSingleton.insertRandomRecords(1000),
             ),
             ListTile(
               leading: const Icon(Icons.insert_drive_file),
               title: const Text('Popular 10.000 registros'),
-              onTap: () =>
-                  dbSingleton.insertRandomRecords(10000),
+              onTap: () => dbSingleton.insertRandomRecords(10000),
             ),
             ListTile(
               leading: const Icon(Icons.account_circle),
               title: const Text('Popular 100.000 registros'),
-              onTap: () =>
-                  dbSingleton.insertRandomRecords(100000),
+              onTap: () => dbSingleton.insertRandomRecords(100000),
             ),
           ],
         ),
@@ -128,11 +127,29 @@ class _HomePageState extends State<HomePage> {
     changeSearch();
   }
 
-  changeSearch() {
-    print('Selected Value: ${tec.text}');
-    print('Selected Column: ${selectedColumn.title}');
+  changeSearch() async {
+    if (tec.text.isEmpty) {
+      setState(() {
+        recordsList = [];
+      });
+      return;
+    }
+
+    log('Selected Value: ${tec.text}');
+    log('Selected Column: ${selectedColumn.title}');
 
     //set state with search and recordList setter
+    final records = await dbSingleton.queryDataset(
+      kExampleDatasetConfig,
+      selectedColumn,
+      tec.text,
+    );
+
+    log(records.length.toString());
+
+    setState(() {
+      recordsList = records;
+    });
   }
 }
 
@@ -160,9 +177,15 @@ class RecordsList extends StatelessWidget {
                     (entry) => Row(
                       children: [
                         Text('${entry.key}: '),
-                        Text(
-                          entry.value,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        Expanded(
+                          child: Text(
+                            entry.value is String
+                                ? entry.value
+                                : entry.value.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            softWrap: true,
+                            overflow: TextOverflow.fade,
+                          ),
                         )
                       ],
                     ),
