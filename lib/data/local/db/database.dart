@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:recase/recase.dart';
 
+import '../../models/filter/filter_model.dart';
 import '../../models/record/record_model.dart';
 
 part 'database.g.dart';
@@ -114,18 +115,17 @@ class MyDatabase extends _$MyDatabase {
 
   Future<List<Record>> queryDataset(
     Dataset dataset,
-    DatasetColumn column,
-    String searchValue,
+    List<Filter> searchFilters,
   ) async {
     final tableName = dataset.uuid.snakeCase;
-    final columnName = 'col_${column.title.snakeCase}';
-    final pattern = "'%$searchValue%'";
+    final patterns = searchFilters
+        .map((e) => "col_${e.title.snakeCase} LIKE '%${e.searchValue}%'");
 
     final statement = '''
-      SELECT $columnName
+      SELECT *
       FROM $tableName
-      WHERE $columnName 
-      LIKE $pattern
+      ${patterns.isNotEmpty ? "WHERE" : ""}        
+      ${patterns.join(" AND \n")}
       LIMIT 100;
     ''';
 
@@ -164,6 +164,30 @@ class MyDatabase extends _$MyDatabase {
     );
 
     log('Terminou de popular tabela ${DateTime.now().toIso8601String()}');
+
+    await _countRecordInTable(kExampleDatasetConfig);
+
+    return result;
+  }
+
+  Future<int> _countRecordInTable(Dataset dataset) async {
+    final tableName = dataset.uuid.snakeCase;
+    final statement = ''' 
+      SELECT COUNT(*) FROM  $tableName;
+    ''';
+
+    final result = await dbSingleton.doWhenOpened<int>(
+      (exec) async {
+        final result = await exec.beginTransaction().runSelect(
+          statement,
+          [],
+        );
+
+        return result.first.values.first as int;
+      },
+    );
+
+    log('TABLE $tableName HAS $result RECORDS');
 
     return result;
   }
@@ -208,17 +232,16 @@ String _parseSqlDataType(ColumnType type) {
 }
 
 List<Record> _generateRandomRecords(int quantity) {
-  final mapColumnValues = {
-    for (final column in kExampleDatasetConfig.columns)
-      column.uuid: _generateColumnValue(column.type),
-  };
-
   return [
-    Record(
-      uuidDataset: kExampleDatasetConfig.uuid,
-      uuidPkColumn: kExampleDatasetConfig.uuidPkColumn,
-      mapColumnValues: mapColumnValues,
-    )
+    for (var i = 0; i < quantity; i++)
+      Record(
+        uuidDataset: kExampleDatasetConfig.uuid,
+        uuidPkColumn: kExampleDatasetConfig.uuidPkColumn,
+        mapColumnValues: {
+          for (final column in kExampleDatasetConfig.columns)
+            column.uuid: _generateColumnValue(column.type),
+        },
+      )
   ];
 }
 
