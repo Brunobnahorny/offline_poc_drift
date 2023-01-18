@@ -36,33 +36,62 @@ class MyDatabase extends _$MyDatabase {
       (e) {
         final pk = e.uuid == dataset.uuidPkColumn;
         if (pk) {
-          return 'col_${e.title.snakeCase} INTEGER PRIMARY KEY AUTOINCREMENT';
+          return '"${e.uuid}" INTEGER PRIMARY KEY AUTOINCREMENT';
         } else {
-          return 'col_${e.title.snakeCase} ${_parseSqlDataType(e.type)}';
+          return '"${e.uuid}" ${_parseSqlDataType(e.type)}';
         }
       },
     ).toList();
 
-    final tableName = dataset.uuid.snakeCase;
+    final tableName = '"${dataset.uuid}"';
+    final ftsTableName = '"${dataset.uuid}_search"';
     final statement = '''
       DROP TABLE IF EXISTS $tableName;
+      DROP TABLE IF EXISTS $ftsTableName;
 
       CREATE TABLE $tableName(
         ${columnStatements.join(', \n')}
       );
     ''';
+
+    final fts5Columns = dataset.columns
+        .where((e) => e.uuid != dataset.uuidPkColumn)
+        .map((e) => '"${e.uuid}"');
+    final fts5Statement = '''
+      CREATE VIRTUAL TABLE $ftsTableName
+      USING FTS5(${fts5Columns.join(',')}, content='$tableName', content_rowid='"${dataset.uuidPkColumn}"');
+    ''';
+
+    final fts5Trigger = '''
+      CREATE TRIGGER "${dataset.uuid}_ai" AFTER INSERT ON $tableName BEGIN
+        INSERT INTO $ftsTableName(rowid, ${fts5Columns.join(',')}) VALUES (new."${dataset.uuidPkColumn}", ${fts5Columns.map((e) => 'new.$e').join(',')});
+      END;
+
+      CREATE TRIGGER "${dataset.uuid}_ad" AFTER DELETE ON $tableName BEGIN
+        INSERT INTO $ftsTableName($ftsTableName, rowid, ${fts5Columns.join(',')}) VALUES('delete', old."${dataset.uuidPkColumn}", ${fts5Columns.map((e) => 'old.$e').join(',')});
+      END;
+
+      CREATE TRIGGER "${dataset.uuid}_au" AFTER UPDATE ON $tableName BEGIN
+        INSERT INTO $ftsTableName($ftsTableName, rowid, ${fts5Columns.join(',')}) VALUES('delete', old."${dataset.uuidPkColumn}", ${fts5Columns.map((e) => 'old.$e').join(',')});
+        INSERT INTO $ftsTableName(rowid, ${fts5Columns.join(',')}) VALUES (new."${dataset.uuidPkColumn}", ${fts5Columns.map((e) => 'new.$e').join(',')});
+      END;
+    ''';
+
     final result = await dbSingleton.doWhenOpened<bool>(
       (exec) async {
-        exec.beginTransaction().runCustom(
+        await exec.beginTransaction().runCustom(
               statement,
             );
+        await exec.runCustom(fts5Statement, []);
+        await exec.runCustom(fts5Trigger, []);
 
-        final result = await exec.runSelect(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name='$tableName';",
+        final results = await exec.runSelect(
+          "SELECT name FROM sqlite_master WHERE type='table';",
           [],
         );
 
-        return result.first['name'].toString() == tableName;
+        return results.any((result) =>
+            result['name'].toString() == tableName.replaceAll('"', ''));
       },
     );
 
@@ -73,10 +102,10 @@ class MyDatabase extends _$MyDatabase {
     Dataset dataset,
     List<Record> records,
   ) async {
-    final tableName = dataset.uuid.snakeCase;
+    final tableName = '"${dataset.uuid}"';
     final columnsNameList = dataset.columns
         .where((col) => col.uuid != dataset.uuidPkColumn)
-        .map((e) => 'col_${e.title.snakeCase}')
+        .map((e) => '"${e.uuid}"')
         .join(',');
     final mapDatasetColumnType = Map<String, ColumnType>.fromEntries(
         dataset.columns.map((e) => MapEntry(e.uuid, e.type)));
@@ -117,9 +146,9 @@ class MyDatabase extends _$MyDatabase {
     Dataset dataset,
     List<Filter> searchFilters,
   ) async {
-    final tableName = dataset.uuid.snakeCase;
-    final patterns = searchFilters
-        .map((e) => "col_${e.title.snakeCase} LIKE '%${e.searchValue}%'");
+    final tableName = '"${dataset.uuid}"';
+    final patterns =
+        searchFilters.map((e) => "\"${e.uuidCol}\" LIKE '%${e.searchValue}%'");
 
     final statement = '''
       SELECT *
@@ -128,6 +157,8 @@ class MyDatabase extends _$MyDatabase {
       ${patterns.join(" AND \n")}
       LIMIT 100;
     ''';
+
+    log(statement);
 
     final result = await dbSingleton.doWhenOpened<List<Map<String, Object?>>>(
       (exec) async => await exec.beginTransaction().runSelect(
@@ -171,7 +202,7 @@ class MyDatabase extends _$MyDatabase {
   }
 
   Future<int> _countRecordInTable(Dataset dataset) async {
-    final tableName = dataset.uuid.snakeCase;
+    final tableName = '"${dataset.uuid}"';
     final statement = ''' 
       SELECT COUNT(*) FROM  $tableName;
     ''';
@@ -260,3 +291,6 @@ _generateColumnValue(ColumnType type) {
       return "[${faker.lorem.sentence().split(' ').join(',')}]";
   }
 }
+
+bool _hasFTS(DatasetColumn e) =>
+    e.type != ColumnType.date && e.type != ColumnType.number;
