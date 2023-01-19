@@ -315,6 +315,3 @@ _generateColumnValue(ColumnType type) {
       return "[${faker.lorem.sentence().split(' ').join(',')}]";
   }
 }
-
-bool _hasFTS(DatasetColumn e) =>
-    e.type != ColumnType.date && e.type != ColumnType.number;
