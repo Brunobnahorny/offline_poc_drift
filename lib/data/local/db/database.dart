@@ -59,7 +59,7 @@ class MyDatabase extends _$MyDatabase {
         .map((e) => '"${e.uuid}"');
     final fts5Statement = '''
       CREATE VIRTUAL TABLE $ftsTableName
-      USING FTS5(${fts5Columns.join(',')}, content='$tableName', content_rowid='"${dataset.uuidPkColumn}"');
+      USING FTS5(${fts5Columns.join(',')}, content='${dataset.uuid}', content_rowid='${dataset.uuidPkColumn}');
     ''';
 
     final fts5Trigger = '''
@@ -89,6 +89,8 @@ class MyDatabase extends _$MyDatabase {
           "SELECT name FROM sqlite_master WHERE type='table';",
           [],
         );
+
+        log(results.map((e) => e['name']).join(','));
 
         return results.any((result) =>
             result['name'].toString() == tableName.replaceAll('"', ''));
@@ -146,15 +148,21 @@ class MyDatabase extends _$MyDatabase {
     Dataset dataset,
     List<Filter> searchFilters,
   ) async {
-    final tableName = '"${dataset.uuid}"';
-    final patterns =
-        searchFilters.map((e) => "\"${e.uuidCol}\" LIKE '%${e.searchValue}%'");
+    final tableName = '"${dataset.uuid}_search"';
+    final patternsMap = {};
+    for (final filter in searchFilters) {
+      patternsMap[filter.uuidCol] = patternsMap[filter.uuidCol] != null
+          ? '${patternsMap[filter.uuidCol]} ${filter.searchValue}'
+          : filter.searchValue;
+    }
+    final patternsStatement =
+        patternsMap.entries.map((e) => "\"${e.key}\" MATCH '${e.value}'");
 
     final statement = '''
       SELECT *
       FROM $tableName
-      ${patterns.isNotEmpty ? "WHERE" : ""}        
-      ${patterns.join(" AND \n")}
+      ${patternsStatement.isNotEmpty ? "WHERE" : ""}        
+      ${patternsStatement.join(" AND \n")}
       LIMIT 100;
     ''';
 
@@ -206,6 +214,10 @@ class MyDatabase extends _$MyDatabase {
     final statement = ''' 
       SELECT COUNT(*) FROM  $tableName;
     ''';
+    final ftsTableName = '"${dataset.uuid}_search"';
+    final ftsStatement = ''' 
+      SELECT COUNT(*) FROM  $ftsTableName;
+    ''';
 
     final result = await dbSingleton.doWhenOpened<int>(
       (exec) async {
@@ -218,7 +230,19 @@ class MyDatabase extends _$MyDatabase {
       },
     );
 
+    final result2 = await dbSingleton.doWhenOpened<int>(
+      (exec) async {
+        final result = await exec.beginTransaction().runSelect(
+          ftsStatement,
+          [],
+        );
+
+        return result.first.values.first as int;
+      },
+    );
+
     log('TABLE $tableName HAS $result RECORDS');
+    log('TABLE $ftsTableName HAS $result2 RECORDS');
 
     return result;
   }

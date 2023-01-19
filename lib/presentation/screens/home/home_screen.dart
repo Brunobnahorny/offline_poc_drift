@@ -214,6 +214,9 @@ class RecordsList extends StatelessWidget {
       itemCount: recordsList.length,
       itemBuilder: (context, index) {
         final record = recordsList[index];
+        final datasetColumnMap = kExampleColumns.asMap().map(
+              (_, col) => MapEntry(col.uuid, col),
+            );
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(8.0),
@@ -222,7 +225,7 @@ class RecordsList extends StatelessWidget {
                   .map(
                     (entry) => Row(
                       children: [
-                        Text('${entry.key}: '),
+                        Text('${datasetColumnMap[entry.key]!.title}: '),
                         Expanded(
                           child: Text(
                             entry.value is String
