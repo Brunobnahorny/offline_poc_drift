@@ -168,12 +168,16 @@ class MyDatabase extends _$MyDatabase {
 
     log(statement);
 
+    log('Começou pesquisar tabela ${DateTime.now().toIso8601String()}');
+
     final result = await dbSingleton.doWhenOpened<List<Map<String, Object?>>>(
       (exec) async => await exec.beginTransaction().runSelect(
         statement,
         [],
       ),
     );
+
+    log('Começou pesquisar tabela ${DateTime.now().toIso8601String()}');
 
     return result.map((e) {
       final Map<String, dynamic> mapColumnValues = e.map(
@@ -191,25 +195,30 @@ class MyDatabase extends _$MyDatabase {
     }).toList();
   }
 
-  Future<bool> insertRandomRecords(int quantity) async {
-    final records =
-        await compute<int, List<Record>>(_generateRandomRecords, quantity);
+  Future<bool> insertRandomRecords(Dataset dataset, int quantity) async {
+    final records = await compute<Map<String, dynamic>, List<Record>>(
+      _generateRandomRecords,
+      {
+        'quantity': quantity,
+        'dataset': dataset,
+      },
+    );
 
     log('Começou popular tabela ${DateTime.now().toIso8601String()}');
 
     final result = await populateDataset(
-      kExampleDatasetConfig,
+      dataset,
       records,
     );
 
     log('Terminou de popular tabela ${DateTime.now().toIso8601String()}');
 
-    await _countRecordInTable(kExampleDatasetConfig);
+    await countRecordInTable(dataset);
 
     return result;
   }
 
-  Future<int> _countRecordInTable(Dataset dataset) async {
+  Future<int> countRecordInTable(Dataset dataset) async {
     final tableName = '"${dataset.uuid}"';
     final statement = ''' 
       SELECT COUNT(*) FROM  $tableName;
@@ -219,6 +228,7 @@ class MyDatabase extends _$MyDatabase {
       SELECT COUNT(*) FROM  $ftsTableName;
     ''';
 
+    log('Começou contar tabela ${DateTime.now().toIso8601String()}');
     final result = await dbSingleton.doWhenOpened<int>(
       (exec) async {
         final result = await exec.beginTransaction().runSelect(
@@ -229,6 +239,7 @@ class MyDatabase extends _$MyDatabase {
         return result.first.values.first as int;
       },
     );
+    log('Terminou contar tabela ${DateTime.now().toIso8601String()}');
 
     final result2 = await dbSingleton.doWhenOpened<int>(
       (exec) async {
@@ -286,14 +297,17 @@ String _parseSqlDataType(ColumnType type) {
   }
 }
 
-List<Record> _generateRandomRecords(int quantity) {
+List<Record> _generateRandomRecords(Map<String, dynamic> map) {
+  final quantity = map['quantity'] as int;
+  final dataset = map['dataset'] as Dataset;
+
   return [
     for (var i = 0; i < quantity; i++)
       Record(
-        uuidDataset: kExampleDatasetConfig.uuid,
-        uuidPkColumn: kExampleDatasetConfig.uuidPkColumn,
+        uuidDataset: dataset.uuid,
+        uuidPkColumn: dataset.uuidPkColumn,
         mapColumnValues: {
-          for (final column in kExampleDatasetConfig.columns)
+          for (final column in dataset.columns)
             column.uuid: _generateColumnValue(column.type),
         },
       )

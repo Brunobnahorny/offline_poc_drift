@@ -44,6 +44,7 @@ dependencies:
   recase: ^4.1.0
   faker: ^2.1.0
   collection: ^1.16.0
+  system_info2: ^3.0.1
 
 dev_dependencies:
   drift_dev: ^2.4.1

@@ -8,6 +8,7 @@ import 'package:offline_poc_drift/presentation/screens/home/widgets/home_drawer_
 
 import '../../../data/models/dataset_config/dataset_column_model.dart';
 import '../../../data/models/filter/filter_model.dart';
+import 'widgets/system_info_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -43,6 +44,7 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
+                const SystemInfo(),
                 TextField(
                   controller: tec,
                 ),

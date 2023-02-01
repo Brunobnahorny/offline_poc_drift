@@ -3,11 +3,19 @@ import 'dart:convert';
 import 'dataset_column_model.dart';
 
 const _kDatasetUuid = 'c5b61220-0122-479c-bf0f-f1c511cd22bf';
+const _kAnotherDatasetUuid = '6b5bcb1c-ee74-45f3-9238-654b9741393f';
 
 const kExampleDatasetConfig = Dataset(
   uuid: _kDatasetUuid,
   uuidPkColumn: pkColumn,
   title: 'Dataset de exemplo',
+  columns: kExampleColumns,
+);
+
+const kExampleAnotherDatasetConfig = Dataset(
+  uuid: _kAnotherDatasetUuid,
+  uuidPkColumn: pkColumn,
+  title: 'Dataset não pesquisável',
   columns: kExampleColumns,
 );
 
