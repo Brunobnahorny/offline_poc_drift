@@ -31,12 +31,16 @@ class _SystemInfoState extends State<SystemInfo> {
         'Free virtual memory: ${SysInfo.getVirtualMemorySize() ~/ kMEGABYTE} MB';
     freeVirtualMemory =
         'Virtual memory size: ${SysInfo.getFreeVirtualMemory() ~/ kMEGABYTE} MB';
-    final mainDatasetCount =
-        await dbSingleton.countRecordInTable(kExampleDatasetConfig);
-    final anotherDatasetCount =
-        await dbSingleton.countRecordInTable(kExampleAnotherDatasetConfig);
+    try {
+      final mainDatasetCount =
+          await dbSingleton.countRecordInTable(kExampleDatasetConfig);
+      final anotherDatasetCount =
+          await dbSingleton.countRecordInTable(kExampleAnotherDatasetConfig);
 
-    recordsCount = '${mainDatasetCount + anotherDatasetCount} registros';
+      recordsCount = '${mainDatasetCount + anotherDatasetCount} registros';
+    } catch (e) {
+      //DO NOTHING
+    }
   }
 
   @override
