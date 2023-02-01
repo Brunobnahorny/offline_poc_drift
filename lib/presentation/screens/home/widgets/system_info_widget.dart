@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:offline_poc_drift/data/local/db/database.dart';
-import 'package:offline_poc_drift/data/models/dataset_config/dataset_model.dart';
 import 'package:system_info2/system_info2.dart';
+
+import '../../../../data/local/db/database.dart';
+import '../../../../data/models/dataset_config/dataset_model.dart';
 
 const int kMEGABYTE = 1024 * 1024;
 
@@ -13,24 +15,27 @@ class SystemInfo extends StatefulWidget {
 }
 
 class _SystemInfoState extends State<SystemInfo> {
-  late String totalPhysicalMemory;
-  late String freePhysicalMemory;
-  late String totalVirtualMemory;
-  late String virtualMemorySize;
-  late String freeVirtualMemory;
+  String totalPhysicalMemory = '--';
+  String freePhysicalMemory = '--';
+  String totalVirtualMemory = '--';
+  String virtualMemorySize = '--';
+  String freeVirtualMemory = '--';
   String recordsCount = '--';
 
   _setSystemInfo() async {
-    totalPhysicalMemory =
-        'Total physical memory: ${SysInfo.getTotalPhysicalMemory() ~/ kMEGABYTE} MB';
-    freePhysicalMemory =
-        'Free physical memory: ${SysInfo.getFreePhysicalMemory() ~/ kMEGABYTE} MB';
-    totalVirtualMemory =
-        'Total virtual memory: ${SysInfo.getTotalVirtualMemory() ~/ kMEGABYTE} MB';
-    virtualMemorySize =
-        'Free virtual memory: ${SysInfo.getVirtualMemorySize() ~/ kMEGABYTE} MB';
-    freeVirtualMemory =
-        'Virtual memory size: ${SysInfo.getFreeVirtualMemory() ~/ kMEGABYTE} MB';
+    //sadly doesnt work in release
+    if (kDebugMode) {
+      totalPhysicalMemory =
+          'Total physical memory: ${SysInfo.getTotalPhysicalMemory() ~/ kMEGABYTE} MB';
+      freePhysicalMemory =
+          'Free physical memory: ${SysInfo.getFreePhysicalMemory() ~/ kMEGABYTE} MB';
+      totalVirtualMemory =
+          'Total virtual memory: ${SysInfo.getTotalVirtualMemory() ~/ kMEGABYTE} MB';
+      virtualMemorySize =
+          'Free virtual memory: ${SysInfo.getVirtualMemorySize() ~/ kMEGABYTE} MB';
+      freeVirtualMemory =
+          'Virtual memory size: ${SysInfo.getFreeVirtualMemory() ~/ kMEGABYTE} MB';
+    }
     try {
       final mainDatasetCount =
           await dbSingleton.countRecordInTable(kExampleDatasetConfig);
@@ -45,7 +50,6 @@ class _SystemInfoState extends State<SystemInfo> {
 
   @override
   void initState() {
-    _setSystemInfo();
     super.initState();
   }
 
@@ -61,11 +65,13 @@ class _SystemInfoState extends State<SystemInfo> {
           },
           icon: const Icon(Icons.repeat),
         ),
-        Text(totalPhysicalMemory),
-        Text(freePhysicalMemory),
-        Text(totalVirtualMemory),
-        Text(virtualMemorySize),
-        Text(freeVirtualMemory),
+        if (kDebugMode) ...[
+          Text(totalPhysicalMemory),
+          Text(freePhysicalMemory),
+          Text(totalVirtualMemory),
+          Text(virtualMemorySize),
+          Text(freeVirtualMemory),
+        ],
         Text(recordsCount),
       ],
     );
